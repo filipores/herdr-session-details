@@ -66,6 +66,14 @@ test("an unrelated mod is never overwritten without explicit replacement", async
   assert.notEqual(await readFile(main, "utf8"), "original user mod");
 });
 
+test("installed README links to public docs without copying catalog assets", async t => {
+  const paths = await setup(t);
+  const target = await install([], paths);
+  assert.match(await readFile(join(target, "README.md"), "utf8"), /https:\/\/github\.com\/filipores\/herdr-session-details#readme/);
+  await assert.rejects(access(join(target, "RECIPE.md")));
+  await assert.rejects(access(join(target, "preview.png")));
+});
+
 test("mod-only installation never changes agent configuration", async t => {
   const paths = await setup(t);
   const target = await install([], paths);

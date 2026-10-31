@@ -10,5 +10,5 @@
   "pi": { "extensions": ["./mods/session-details/integrations/pi/index.ts"] },
   "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
   "scripts": { "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts" },
-  "files": ["mods/session-details/*.js", "mods/session-details/mod.json", "mods/session-details/integrations", "install.mjs", "README.md", "RECIPE.md", "preview.png"]
+  "files": ["mods/session-details/*.js", "mods/session-details/mod.json", "mods/session-details/integrations", "install.mjs", "README.md", "RECIPE.md", "preview.png", "docs"]
 }

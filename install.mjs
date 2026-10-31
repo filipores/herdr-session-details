@@ -80,7 +80,7 @@ export async function install(clients, paths = {}) {
   const staged = join(appHome, `.session-details-stage-${stamp}`);
   await mkdir(join(appHome, "mods"), { recursive: true });
   await cp(join(root, "mods/session-details"), staged, { recursive: true });
-  await cp(join(root, "README.md"), join(staged, "README.md"));
+  await writeFile(join(staged, "README.md"), "# Session Details\n\n[Setup and documentation](https://github.com/filipores/herdr-session-details#readme)\n");
   await writeFile(join(staged, ".session-details-installed"), "1\n");
   if (await exists(target)) {
     await mkdir(join(appHome, "backups"), { recursive: true });
