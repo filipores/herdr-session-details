@@ -1,0 +1,14 @@
+{
+  "name": "herdr-session-details",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A quiet Herdr session panel for Pi and Claude Code, with an experimental Codex CLI adapter",
+  "repository": { "type": "git", "url": "https://github.com/filipores/herdr-session-details.git" },
+  "type": "module",
+  "engines": { "node": ">=22.19.0" },
+  "keywords": ["herdr-mod", "pi-package"],
+  "pi": { "extensions": ["./mods/session-details/integrations/pi/index.ts"] },
+  "peerDependencies": { "@earendil-works/pi-coding-agent": "*" },
+  "scripts": { "test": "node --experimental-strip-types --test tests/*.test.mjs tests/*.test.ts" },
+  "files": ["mods/session-details/*.js", "mods/session-details/mod.json", "mods/session-details/integrations", "install.mjs", "README.md", "RECIPE.md", "preview.png"]
+}
