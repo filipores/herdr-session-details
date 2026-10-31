@@ -69,7 +69,7 @@ export default function (pi: ExtensionAPI) {
     timer = setInterval(refresh, 5000);
     timer.unref();
   });
-  const update = (_event: unknown, context: ExtensionContext) => { ctx = context; refresh(); };
+  const update = (_event: unknown, context: ExtensionContext) => { ctx = context; void publish(); refresh(); };
   pi.on("model_select", update);
   pi.on("thinking_level_select", (_event, context) => {
     ctx = context;

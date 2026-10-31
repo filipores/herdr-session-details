@@ -31,7 +31,7 @@ export function codexHooks(config, adapterPath, adapterCommand) {
   const result = structuredClone(config);
   result.hooks ??= {};
   if (typeof result.hooks !== "object" || Array.isArray(result.hooks)) throw new Error("Invalid Codex hooks configuration");
-  for (const event of ["SessionStart", "UserPromptSubmit", "Stop"]) {
+  for (const event of ["SessionStart", "UserPromptSubmit", "Stop", "PostCompact"]) {
     const groups = result.hooks[event] ??= [];
     if (!Array.isArray(groups) || groups.some(group => !Array.isArray(group?.hooks))) throw new Error(`Invalid ${event} hooks`);
     const installed = groups.flatMap(group => group.hooks).find(hook => hook.command?.includes(quote(adapterPath)));
@@ -81,6 +81,7 @@ export async function install(clients, paths = {}) {
   await mkdir(join(appHome, "mods"), { recursive: true });
   await cp(join(root, "mods/session-details"), staged, { recursive: true });
   await writeFile(join(staged, "README.md"), "# Session Details\n\n[Setup and documentation](https://github.com/filipores/herdr-session-details#readme)\n");
+  await cp(join(root, "LICENSE"), join(staged, "LICENSE"));
   await writeFile(join(staged, ".session-details-installed"), "1\n");
   if (await exists(target)) {
     await mkdir(join(appHome, "backups"), { recursive: true });

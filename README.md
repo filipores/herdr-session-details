@@ -25,7 +25,7 @@ The installer backs up changed files and preserves Claude's existing status line
 | --- | --- |
 | **Pi** | Model, effort and context for any provider. Weekly usage for Codex and Anthropic OAuth subscriptions. |
 | **Claude Code** | Model, effort, context and weekly usage supplied by its status line. |
-| **Codex CLI · experimental** | Session-hook metadata, plus ChatGPT subscription usage with file-backed OAuth credentials. |
+| **Codex CLI** | Session-hook metadata, plus ChatGPT subscription usage with file-backed OAuth credentials. |
 
 Reset credits are Codex-only. Unsupported limits stay hidden; unavailable values show `—`, not zero.
 
@@ -33,6 +33,6 @@ Reset credits are Codex-only. Unsupported limits stay hidden; unavailable values
 
 Adapters publish status metadata to the panel, never chat text or credentials. Subscription checks use read-only provider APIs; credits are never purchased or redeemed.
 
-Tested on macOS. **Codex CLI has not been live-tested.** See [compatibility notes](docs/guide.md#compatibility) before relying on an unverified client or platform.
+Tested on macOS. See [compatibility notes](docs/guide.md#compatibility) for verified client versions and remaining limits.
 
-[Setup & troubleshooting](docs/guide.md) · [Rebuild recipe](RECIPE.md) · [Report an issue](https://github.com/filipores/herdr-session-details/issues)
+[Setup & troubleshooting](docs/guide.md) · [Rebuild recipe](RECIPE.md) · [Report an issue](https://github.com/filipores/herdr-session-details/issues) · [MIT license](LICENSE)

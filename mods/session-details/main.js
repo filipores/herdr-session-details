@@ -63,7 +63,7 @@ export default class SessionDetails extends View {
     const help = space?.machine ? "install the adapter on this machine." : {
       pi: "run /reload in pi to connect.",
       claude: "connect the claude code status line.",
-      codex: "enable the codex session-details hooks.",
+      codex: "send a prompt; if still blank, check the hooks.",
     }[program?.key] ?? "connect a pi, claude code or codex adapter.";
     return root.p(16).gap(20).text_size(12).overflow_y_scrollbar()
       .child(v_flex().gap(7)

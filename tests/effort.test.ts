@@ -50,3 +50,52 @@ for (const blocked of ["nothing", "quota lookup", "previous label write"]) {
     }
   });
 }
+
+test("model, turn and compaction updates do not wait for a quota lookup", async () => {
+  const previous = process.env.HC_TERMINAL_ID;
+  process.env.HC_TERMINAL_ID = "session-update-test";
+  const handlers = new Map<string, Function>();
+  const writes: string[][] = [];
+  let percent = 10;
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  const pi: any = {
+    on: (event: string, handler: Function) => handlers.set(event, handler),
+    getThinkingLevel: () => "high",
+    exec: async (_command: string, args: string[]) => { writes.push(args); return { code: 0 }; },
+  };
+  const ctx: any = {
+    mode: "tui", cwd: "/test/project", model: { provider: "openai-codex", id: "model-a", name: "Model A" },
+    modelRegistry: { isUsingOAuth: () => true, getApiKeyForProvider: () => pending },
+    getContextUsage: () => ({ percent }),
+  };
+  const latest = () => JSON.parse(writes.at(-1)![2].slice("herdr.session-details=".length));
+  try {
+    extension(pi);
+    handlers.get("session_start")!({}, ctx);
+    await flush();
+    assert.equal(latest().model.id, "model-a");
+    ctx.model = { ...ctx.model, id: "model-b", name: "Model B" };
+    handlers.get("model_select")!({}, ctx);
+    await flush();
+    assert.equal(latest().model.id, "model-b");
+    assert.equal(latest().quota, null);
+    percent = 22;
+    handlers.get("turn_end")!({}, ctx);
+    await flush();
+    assert.equal(latest().contextPercent, 22);
+    percent = 4;
+    handlers.get("session_compact")!({}, ctx);
+    await flush();
+    assert.equal(latest().contextPercent, 4);
+    release();
+    await flush();
+    assert.equal(latest().model.id, "model-b");
+    assert.equal(latest().contextPercent, 4);
+  } finally {
+    release();
+    await handlers.get("session_shutdown")?.({});
+    if (previous === undefined) delete process.env.HC_TERMINAL_ID;
+    else process.env.HC_TERMINAL_ID = previous;
+  }
+});

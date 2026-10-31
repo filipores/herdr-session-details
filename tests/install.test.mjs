@@ -32,6 +32,8 @@ test("install preserves Claude HUD, unrelated settings and Codex hooks, and does
   assert.deepEqual(hooks.hooks.SessionStart[0], existing.hooks.SessionStart[0]);
   assert.equal(hooks.hooks.SessionStart.length, 2);
   assert.equal(hooks.hooks.Stop.length, 1);
+  assert.equal(hooks.hooks.PostCompact?.length, 1);
+  assert.deepEqual(hooks.hooks.PostCompact[0].hooks, hooks.hooks.Stop[0].hooks);
   assert.equal(hooks.unrelated, true);
   await install(["pi", "claude", "codex"], paths);
   assert.deepEqual(await load(join(paths.claudeDir, "settings.json")), after);
@@ -66,10 +68,11 @@ test("an unrelated mod is never overwritten without explicit replacement", async
   assert.notEqual(await readFile(main, "utf8"), "original user mod");
 });
 
-test("installed README links to public docs without copying catalog assets", async t => {
+test("installed mod includes its license and links to docs without copying catalog assets", async t => {
   const paths = await setup(t);
   const target = await install([], paths);
   assert.match(await readFile(join(target, "README.md"), "utf8"), /https:\/\/github\.com\/filipores\/herdr-session-details#readme/);
+  assert.equal(await readFile(join(target, "LICENSE"), "utf8"), await readFile(new URL("../LICENSE", import.meta.url), "utf8"));
   await assert.rejects(access(join(target, "RECIPE.md")));
   await assert.rejects(access(join(target, "preview.png")));
 });
