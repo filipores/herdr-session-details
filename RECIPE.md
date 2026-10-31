@@ -30,7 +30,7 @@ Pi heartbeats and event callbacks keep the panel current. Native CLI adapters ar
 
 ## Watch out
 
-Claude 2.1.316 and Codex 0.166.0 were live-tested through turns, model changes, compaction and resume. Codex's first metadata can arrive only after the first prompt; its `PostCompact` hook provides compaction updates. These checks used OAuth subscriptions on macOS; API-key/local-model cases remain fixture-tested.
+Claude 2.1.316 and Codex 0.166.0 (`--no-daemon`) were live-tested through turns, model changes, compaction and resume. Codex's first metadata can arrive only after the first prompt; its `PostCompact` hook provides compaction updates. These checks used OAuth subscriptions on macOS; API-key/local-model cases remain fixture-tested.
 
 Herdr doesn't supply model/effort/context by itself: an adapter must be installed on the machine running the client. Do not infer quota support from a model name. Codex API-key/local-provider sessions must not inherit a different ChatGPT account's quota. Native hook reports are not Pi-style heartbeats. Verify `session_id` against the actual Codex transcript; don't scan for the latest file in a folder. Never publish prompts, replies, credentials or account identifiers.
 

@@ -49,9 +49,9 @@ OAuth usage checks read OpenAI's `/backend-api/wham/usage` and `/rate-limit-rese
 
 ## Compatibility
 
-Live checks on macOS used Herdr **0.1.10**, `hc` **0.1.15**, Pi **1.4.0**, Claude Code **2.1.316** and Codex CLI **0.166.0**. They cover Pi model/effort updates and both native clients' turns, model changes, compaction and resume. Claude's original status-line output remained intact. Automated tests target Node **22/24**.
+Live checks on macOS used Herdr **0.1.10**, `hc` **0.1.15**, Pi **1.4.0**, Claude Code **2.1.316** and Codex CLI **0.166.0** (`--no-daemon`). They cover Pi model/effort updates and both native clients' turns, model changes, compaction and resume. Claude's original status-line output remained intact. Automated tests target Node **22/24**.
 
-API-key/local-model cases have fixture tests, not live end-to-end verification. Codex's transcript format is not a stable API; client updates may require adapter changes. Other platforms, remote setups, VoiceOver and light appearance still need QA. Gemini CLI and OpenCode adapters aren't included; their model providers can be used through Pi.
+API-key/local-model cases have fixture tests, not live end-to-end verification. Codex's transcript format is not a stable API; client updates may require adapter changes. Codex daemon mode, other platforms, remote setups, VoiceOver and light appearance still need QA. Gemini CLI and OpenCode adapters aren't included; their model providers can be used through Pi.
 
 ## Remove or roll back
 
