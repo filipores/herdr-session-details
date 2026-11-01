@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { emptyQuota, remaining, timestamp } from "./usage.mjs";
-import { readInput, getTerminal, publish } from "./terminal.mjs";
+import { readInput, publish } from "./terminal.mjs";
 
 export function claudeSnapshot(data, now = Date.now()) {
   const session = data.rate_limits?.five_hour;
@@ -21,8 +21,7 @@ export function claudeSnapshot(data, now = Date.now()) {
 }
 
 async function update(input) {
-  const terminal = await getTerminal("claude-code");
-  if (terminal) await publish(terminal, "claude-code", claudeSnapshot(JSON.parse(input)));
+  await publish("claude-code", claudeSnapshot(JSON.parse(input)));
 }
 
 export async function forwardStatusline(command, input) {

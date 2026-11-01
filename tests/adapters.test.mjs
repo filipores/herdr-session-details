@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
@@ -155,4 +155,76 @@ test("Claude wrapper preserves existing status-line output and stdin", async t =
   });
   assert.equal(result.stdout, "Sonnet ORIGINAL\n");
   assert.equal(result.stderr, "");
+});
+
+async function hookHarness(t, app, switchedPid) {
+  const dir = await directory(t);
+  const state = join(dir, "terminal.json"), calls = join(dir, "calls");
+  await writeFile(state, JSON.stringify({ address: "t1", state: "live", status: { app }, foreground: { pid: 123 }, labels: {} }));
+  await writeFile(calls, "");
+  await writeFile(join(dir, "hc"), `#!${process.execPath}
+import { readFileSync, writeFileSync, appendFileSync } from "node:fs";
+const args = process.argv.slice(2), path = process.env.HC_TEST_STATE;
+const terminal = JSON.parse(readFileSync(path, "utf8"));
+appendFileSync(process.env.HC_TEST_CALLS, args[0] + "\\n");
+if (args[0] === "get") {
+  if (terminal.read && process.env.HC_TEST_SWITCH_PID) terminal.foreground.pid = Number(process.env.HC_TEST_SWITCH_PID);
+  terminal.read = true;
+  process.stdout.write(JSON.stringify(terminal));
+} else if (args[0] === "label") {
+  terminal.labels["herdr.session-details"] = args[2].slice("herdr.session-details=".length);
+} else process.exit(1);
+writeFileSync(path, JSON.stringify(terminal));
+`, { mode: 0o755 });
+  const env = { ...process.env, PATH: `${dir}:${process.env.PATH}`, HC_TERMINAL_ID: "t1",
+    HC_TEST_STATE: state, HC_TEST_CALLS: calls, HC_TEST_SWITCH_PID: switchedPid ? String(switchedPid) : "" };
+  return { state, calls, async run(adapter, input) {
+    const path = new URL(`../mods/session-details/integrations/${adapter}.mjs`, import.meta.url).pathname;
+    await new Promise((resolve, reject) => {
+      const child = execFile(process.execPath, [path], { env }, (error, stdout, stderr) => {
+        if (error) return reject(error);
+        try { assert.equal(stdout, ""); assert.equal(stderr, ""); resolve(); } catch (error) { reject(error); }
+      });
+      child.stdin.end(JSON.stringify(input));
+    });
+  } };
+}
+
+test("Claude reads once per tick and only labels changed snapshots, not timestamp changes", async t => {
+  const hook = await hookHarness(t, "claude");
+  const input = { model: { id: "sonnet" }, rate_limits: { five_hour: { used_percentage: 75 } } };
+  await hook.run("claude", input);
+  assert.equal(await readFile(hook.calls, "utf8"), "get\nlabel\n");
+  const first = JSON.parse(await readFile(hook.state, "utf8")).labels["herdr.session-details"];
+  await hook.run("claude", input);
+  assert.equal(await readFile(hook.calls, "utf8"), "get\nlabel\nget\n");
+  assert.equal(JSON.parse(await readFile(hook.state, "utf8")).labels["herdr.session-details"], first);
+  input.rate_limits.five_hour.used_percentage = 80;
+  await hook.run("claude", input);
+  assert.equal(await readFile(hook.calls, "utf8"), "get\nlabel\nget\nget\nlabel\n");
+  const terminal = JSON.parse(await readFile(hook.state, "utf8"));
+  assert.equal(JSON.parse(terminal.labels["herdr.session-details"]).quota.sessionLeft, 20);
+  terminal.foreground.pid = 456;
+  await writeFile(hook.state, JSON.stringify(terminal));
+  await hook.run("claude", input);
+  assert.equal(JSON.parse(JSON.parse(await readFile(hook.state, "utf8")).labels["herdr.session-details"]).pid, 456);
+});
+
+test("Codex publishes only if the process still owns its session metadata", async t => {
+  const { path } = await transcript(t, "ollama");
+  for (const switchedPid of [undefined, 456]) {
+    const hook = await hookHarness(t, "codex", switchedPid);
+    await hook.run("codex", { session_id: "session-a", transcript_path: path, model: "model-a" });
+    assert.equal(await readFile(hook.calls, "utf8"), switchedPid ? "get\nget\n" : "get\nget\nlabel\n");
+    const labels = JSON.parse(await readFile(hook.state, "utf8")).labels;
+    if (switchedPid) assert.deepEqual(labels, {});
+    else assert.equal(JSON.parse(labels["herdr.session-details"]).pid, 123);
+  }
+});
+
+test("Claude's final ownership read rejects an unrelated foreground client", async t => {
+  const hook = await hookHarness(t, "pi");
+  await hook.run("claude", { model: { id: "sonnet" } });
+  assert.equal(await readFile(hook.calls, "utf8"), "get\n");
+  assert.deepEqual(JSON.parse(await readFile(hook.state, "utf8")).labels, {});
 });

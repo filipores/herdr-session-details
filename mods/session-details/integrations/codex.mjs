@@ -86,7 +86,7 @@ async function main() {
   const terminal = await getTerminal("codex");
   if (!terminal) return;
   const snapshot = await codexSnapshot(data, previousStatus(terminal, "codex"));
-  await publish(terminal, "codex", snapshot);
+  await publish("codex", snapshot, terminal.foreground.pid);
 }
 
 if (import.meta.main) {
