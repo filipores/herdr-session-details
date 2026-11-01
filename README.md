@@ -2,7 +2,7 @@
 
 Model, effort and context for your focused [Herdr](https://herdr.dev) terminal, with subscription usage where supported.
 
-<img src="preview.png" width="480" alt="A Pi session showing its model, reasoning effort, folder, branch, context usage, weekly allowance and reset credits in Session Details.">
+<img src="preview.png" width="480" alt="A synthetic session showing its model, reasoning effort, folder, branch, context usage, 5h and weekly allowances, and reset credits in Session Details.">
 
 ## Get started
 
