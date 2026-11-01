@@ -24,7 +24,7 @@ Pi heartbeats and event callbacks keep the panel current. Native CLI adapters ar
 - `main.js`: GPUI builders and Herdr's `focused`, `panes`, `terminals`, `spaces`, `theme`, `run` APIs.
 - `status.js`: versioned metadata validation, capability selection, freshness and presentation formatting.
 - Pi extension: model/context APIs, existing provider authentication, bounded quota polling, `hc label`.
-- Claude status-line wrapper: normalizes the supplied JSON and forwards the same stdin to the person's original status-line command, preserving stdout.
+- Claude status-line wrapper: normalizes the supplied JSON and forwards the same stdin to the person's original status-line command, preserving stdout. Read terminal ownership just before publishing; unchanged snapshots (ignoring report timestamps) do not rewrite labels.
 - Codex command hooks: verified session-specific JSONL metadata, optional read-only ChatGPT usage calls, and `hc label`. Hooks write no conversational output and never request another turn.
 - Shared adapters use Node's standard library, with no runtime package dependencies. Credentials remain in the client's authentication layer; only display metadata is sent to Herdr.
 

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { isDeepStrictEqual, promisify } from "node:util";
 
 const exec = promisify(execFile);
 export const LABEL = "herdr.session-details";
@@ -38,9 +38,17 @@ export function previousStatus(terminal, client) {
   } catch { return null; }
 }
 
-export async function publish(terminal, client, snapshot) {
+export async function publish(client, snapshot, expectedPid) {
+  // Claude builds synchronously before this read; Codex passes its pre-I/O pid to reject process switches.
   const current = await getTerminal(client);
-  if (!current || current.foreground.pid !== terminal.foreground.pid) return;
-  const value = { ...snapshot, version: 2, client, pid: terminal.foreground.pid, updatedAt: Date.now() };
-  await exec("hc", ["label", terminal.address, `${LABEL}=${JSON.stringify(value)}`], { timeout: 2000 });
+  if (!current || (expectedPid !== undefined && current.foreground.pid !== expectedPid)) return;
+  const value = { ...snapshot, version: 2, client, pid: current.foreground.pid, updatedAt: Date.now() };
+  const previous = previousStatus(current, client);
+  if (client === "claude-code" && previous) {
+    // Identical event-driven reports keep their timestamps; they don't need a heartbeat.
+    const comparable = { ...value, updatedAt: previous.updatedAt };
+    if (comparable.quota && previous.quota) comparable.quota = { ...comparable.quota, fetchedAt: previous.quota.fetchedAt };
+    if (isDeepStrictEqual(comparable, previous)) return;
+  }
+  await exec("hc", ["label", current.address, `${LABEL}=${JSON.stringify(value)}`], { timeout: 2000 });
 }
