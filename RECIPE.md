@@ -4,6 +4,8 @@ A quiet native Herdr panel that answers: which model is running, where, how full
 
 ![Session Details](preview.png)
 
+The preview is a native panel capture with synthetic session metadata.
+
 ## What you see
 
 A theme-colored panel about 210 logical pixels high, with 16-pixel padding and the current Herdr terminal font. A 13-pixel regular model name sits beside the smaller raw reasoning-effort label, such as `xhigh`. Folder and branch occupy the next muted line, with Herdr's folder and branch icons.
