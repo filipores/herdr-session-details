@@ -60,6 +60,7 @@ export function quotaStatus(status, now = Date.now()) {
     || (!eventDriven && now - quota.fetchedAt >= 120000)) return null;
   return {
     ...quota,
+    sessionLeft: quota.sessionResetAt != null && quota.sessionResetAt <= now ? null : quota.sessionLeft,
     weeklyLeft: quota.weeklyResetAt != null && quota.weeklyResetAt <= now ? null : quota.weeklyLeft,
     resetCount: quota.firstResetExpiresAt != null && quota.firstResetExpiresAt <= now ? null : quota.resetCount,
   };

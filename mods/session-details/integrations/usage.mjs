@@ -1,4 +1,5 @@
 export const emptyQuota = (now = Date.now()) => ({
+  sessionLeft: null, sessionResetAt: null,
   weeklyLeft: null, weeklyResetAt: null, resetCount: null,
   firstResetExpiresAt: null, fetchedAt: now,
 });
@@ -17,13 +18,15 @@ export function remaining(value) {
 
 export function codexQuota(usage, resets, now = Date.now()) {
   const windows = [usage?.rate_limit?.primary_window, usage?.rate_limit?.secondary_window];
+  const session = windows.find(window => window?.limit_window_seconds === 18000);
   const weekly = windows.find(window => window?.limit_window_seconds === 604800);
   const credits = Array.isArray(resets?.credits) ? resets.credits : null;
   const available = credits?.filter(credit => credit?.status === "available"
     && (credit.expires_at == null || (timestamp(credit.expires_at) ?? 0) > now));
   const expiries = available?.map(credit => timestamp(credit.expires_at)).filter(time => time !== null) ?? [];
   return {
-    ...emptyQuota(now), weeklyLeft: remaining(weekly?.used_percent), weeklyResetAt: timestamp(weekly?.reset_at),
+    ...emptyQuota(now), sessionLeft: remaining(session?.used_percent), sessionResetAt: timestamp(session?.reset_at),
+    weeklyLeft: remaining(weekly?.used_percent), weeklyResetAt: timestamp(weekly?.reset_at),
     resetCount: available?.length ?? null,
     firstResetExpiresAt: expiries.length ? Math.min(...expiries) : null,
     ...(credits === null ? { error: "Reset credits unavailable" } : {}),
@@ -54,5 +57,8 @@ export async function fetchAnthropicQuota(token, signal) {
   const usage = await get("https://api.anthropic.com/api/oauth/usage", {
     authorization: `Bearer ${token}`, accept: "application/json", "anthropic-beta": "oauth-2025-04-20",
   }, signal);
-  return { ...emptyQuota(), weeklyLeft: remaining(usage?.seven_day?.utilization), weeklyResetAt: timestamp(usage?.seven_day?.resets_at) };
+  return {
+    ...emptyQuota(), sessionLeft: remaining(usage?.five_hour?.utilization), sessionResetAt: timestamp(usage?.five_hour?.resets_at),
+    weeklyLeft: remaining(usage?.seven_day?.utilization), weeklyResetAt: timestamp(usage?.seven_day?.resets_at),
+  };
 }

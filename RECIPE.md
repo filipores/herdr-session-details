@@ -8,7 +8,7 @@ A quiet native Herdr panel that answers: which model is running, where, how full
 
 A theme-colored panel about 210 logical pixels high, with 16-pixel padding and the current Herdr terminal font. A 13-pixel regular model name sits beside the smaller raw reasoning-effort label, such as `xhigh`. Folder and branch occupy the next muted line, with Herdr's folder and branch icons.
 
-Below, context used and supported weekly allowance remaining sit side by side. Labels are quiet, percentages are muted, normal-weight whole numbers at 14 pixels, and both three-pixel gauges use the same muted gray. Unsupported allowance fields are omitted. Supported but unavailable values use an em dash.
+Below, context used, supported 5h and weekly allowance remaining sit side by side. Two-line labels and 12-pixel column gaps fit the default 268-pixel width; section gaps are 16 pixels. Percentages are muted, normal-weight whole numbers at 14 pixels, and three-pixel gauges use the same muted gray. Unsupported allowance fields are omitted. Supported but unavailable values use an em dash.
 
 Where supported, one secondary line gives reset-credit count and the earliest expiry date. There are no decorative cards, extra rules or redundant Live headings. Hover exposes exact values and timestamps, also provided as accessibility labels. Display text is lowercase English. Case-sensitive paths, branches and model IDs keep their original spelling in tooltips.
 
@@ -38,9 +38,9 @@ Read existing client settings before changing them. Preserve Claude's existing H
 
 ## Done when
 
-- Pi with an API-key or local model shows model/context without a fake weekly quota or reset row.
-- Claude shows its own model, effort, context and reported weekly allowance; its existing HUD still renders.
+- Pi with an API-key or local model shows model/context without fake 5h/weekly quotas or a reset row.
+- Claude shows its own model, effort, context and reported 5h/weekly allowances; its existing HUD still renders.
 - Codex hook metadata belongs to the correct session/process and uses last-request context tokens, not lifetime totals.
 - Changing the focused terminal never carries another session's data across.
-- Expired/unknown values are distinguished from actual zero and unsupported fields are hidden.
+- Expired/unknown values are distinguished from actual zero and unsupported fields are hidden. Older v2 labels without the `session` capability keep rendering without a 5h metric.
 - Tests and `herdr-app check` pass; live QA covers the intended client and platform before claiming support is verified.

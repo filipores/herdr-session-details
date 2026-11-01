@@ -4,6 +4,7 @@ import { emptyQuota, remaining, timestamp } from "./usage.mjs";
 import { readInput, getTerminal, publish } from "./terminal.mjs";
 
 export function claudeSnapshot(data, now = Date.now()) {
+  const session = data.rate_limits?.five_hour;
   const weekly = data.rate_limits?.seven_day;
   const context = data.context_window?.used_percentage;
   return {
@@ -11,8 +12,11 @@ export function claudeSnapshot(data, now = Date.now()) {
     model: data.model?.id ? { id: data.model.id, name: data.model.display_name || data.model.id, provider: null } : null,
     effort: typeof data.effort?.level === "string" ? data.effort.level : null,
     contextPercent: typeof context === "number" && Number.isFinite(context) ? Math.max(0, Math.min(100, context)) : null,
-    capabilities: { weekly: weekly != null, resetCredits: false },
-    quota: weekly ? { ...emptyQuota(now), weeklyLeft: remaining(weekly.used_percentage), weeklyResetAt: timestamp(weekly.resets_at) } : null,
+    capabilities: { session: session != null, weekly: weekly != null, resetCredits: false },
+    quota: session || weekly ? {
+      ...emptyQuota(now), sessionLeft: remaining(session?.used_percentage), sessionResetAt: timestamp(session?.resets_at),
+      weeklyLeft: remaining(weekly?.used_percentage), weeklyResetAt: timestamp(weekly?.resets_at),
+    } : null,
   };
 }
 

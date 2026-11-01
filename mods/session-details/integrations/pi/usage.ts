@@ -3,6 +3,8 @@ import { fetchAnthropicQuota, fetchCodexQuota } from "../usage.mjs";
 
 export { codexQuota } from "../usage.mjs";
 export type Quota = {
+  sessionLeft: number | null;
+  sessionResetAt: number | null;
   weeklyLeft: number | null;
   weeklyResetAt: number | null;
   resetCount: number | null;
