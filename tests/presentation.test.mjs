@@ -100,6 +100,7 @@ test("panel renders supported 5h values, hides old/unsupported fields and keeps 
     if (expected === null) assert.equal(metric, undefined);
     else {
       assert.deepEqual(text(metric), ["5h\nremaining", expected]);
+      assert.deepEqual(metric.children[0].styles.line_height, ["14px"], "GPUI treats bare line heights as multipliers, not pixels");
       assert.equal(metric.styles.accessibility_label[0], metric.styles.tooltip[0]);
     }
     assert.ok(text(rendered).includes("80%"), "weekly allowance stays visible, including old v2 labels");

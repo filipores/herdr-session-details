@@ -15,7 +15,7 @@ export default class SessionDetails extends View {
     const exact = amount === null ? `${label}: unavailable` : `${label}: ${amount.toFixed(1)}%`;
     const description = detail ? `${exact}. ${detail}` : exact;
     return v_flex().flex_1().min_w(0).gap(5).tooltip(description).accessibility_label(description)
-      .child(div().h(28).line_height(14).text_size(11.5).text_color(t.muted).child(label.replace(" ", "\n")))
+      .child(div().h(28).line_height("14px").text_size(11.5).text_color(t.muted).child(label.replace(" ", "\n")))
       .child(div().text_size(14).font_normal().text_color(t.muted).child(amount === null ? "—" : `${Math.round(amount)}%`))
       .child(div().mt(3).h(3).w_full().bg(t.border).rounded(2).overflow_hidden()
         .when(amount !== null, el => el.child(div().h(3).w(`${amount}%`).bg(color).rounded(2))));
