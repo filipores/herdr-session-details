@@ -32,11 +32,13 @@ Optional: use the same mod with `"props": {"footer": true}` for a machine/branch
 
 ## Data and refresh
 
-Adapters publish a `herdr.session-details` terminal label containing model, effort, directory, context percentage, client/process identity, optional session ID, quota values and timestamps. Legacy `pi.live-status` labels remain readable.
+Adapters publish a `herdr.session-details` terminal label containing model, effort, directory, context percentage, client/process identity, optional session ID, quota values and timestamps. Legacy `pi.live-status` labels and older v2 labels remain readable. The optional `session` capability exposes `sessionLeft`/`sessionResetAt` for the 5h window alongside weekly quota fields.
 
 - **Pi:** model, effort and context changes publish on events without waiting for quota requests; a five-second poll covers other changes. Quotas refresh once a minute. Missing heartbeats expire after 75 seconds; stale quotas after two minutes.
 - **Claude and Codex:** updates arrive through status-line callbacks or hooks. Codex may not run its first hooks until you send a prompt, including after resume. Its idle `/model` selection appears at the next turn hook; completed compaction refreshes immediately. Idle data stays valid only for the same process. Tooltips show when quotas were reported; elapsed reset dates don't imply a refill.
 - **Codex context:** reads only the hook-provided transcript, verifies its session ID and discards conversation content. Usage is last-request tokens divided by the model window, not lifetime tokens. This can differ from Codex's baseline-adjusted percentage. Compaction clears it until a new report; large transcripts can exceed the three-second read deadline.
+
+5h usage comes from Claude's `rate_limits.five_hour`, Codex's 300-minute transcript or 18000-second usage window, and Pi's Anthropic `five_hour` or Codex usage window.
 
 OAuth usage checks read OpenAI's `/backend-api/wham/usage` and `/rate-limit-reset-credits`, or Anthropic's `/api/oauth/usage`. These provider endpoints may change. Native Claude uses its supplied status-line JSON without reading credentials. Codex keychain-only credentials aren't read, so reset credits are unavailable in that setup.
 
@@ -44,7 +46,7 @@ OAuth usage checks read OpenAI's `/backend-api/wham/usage` and `/rate-limit-rese
 
 - **No session details:** install the adapter on the client's machine, then reload/restart that client. It must run in a Herdr terminal with `HC_TERMINAL_ID`. In Codex, review the hooks through `/hooks`, then send a first prompt.
 - **Context is `—`:** the client may not have reported usage yet, especially before its first response or after compaction.
-- **No weekly allowance:** API-key and local-model sessions usually don't have a supported subscription limit. Claude shows one only when its callback supplies it.
+- **No 5h/weekly allowance:** API-key and local-model sessions usually don't have a supported subscription limit. Claude shows one only when its callback supplies it.
 - **Quota or credits become unavailable:** check the client's OAuth login and connectivity. Missing or expired data is never displayed as zero.
 
 ## Compatibility

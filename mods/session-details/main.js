@@ -15,7 +15,7 @@ export default class SessionDetails extends View {
     const exact = amount === null ? `${label}: unavailable` : `${label}: ${amount.toFixed(1)}%`;
     const description = detail ? `${exact}. ${detail}` : exact;
     return v_flex().flex_1().min_w(0).gap(5).tooltip(description).accessibility_label(description)
-      .child(div().text_size(11.5).text_color(t.muted).child(label))
+      .child(div().h(28).line_height(14).text_size(11.5).text_color(t.muted).child(label.replace(" ", "\n")))
       .child(div().text_size(14).font_normal().text_color(t.muted).child(amount === null ? "—" : `${Math.round(amount)}%`))
       .child(div().mt(3).h(3).w_full().bg(t.border).rounded(2).overflow_hidden()
         .when(amount !== null, el => el.child(div().h(3).w(`${amount}%`).bg(color).rounded(2))));
@@ -59,13 +59,14 @@ export default class SessionDetails extends View {
     }
     const effort = (status?.effort ?? "").toLowerCase();
     const resets = resetSummary(quota);
+    const sessionReset = quota?.sessionResetAt ? `resets ${dateTime(quota.sessionResetAt)} (local time)` : "";
     const weeklyReset = quota?.weeklyResetAt ? `resets ${dateTime(quota.weeklyResetAt)} (local time)` : "";
     const help = space?.machine ? "install the adapter on this machine." : {
       pi: "run /reload in pi to connect.",
       claude: "connect the claude code status line.",
       codex: "send a prompt; if still blank, check the hooks.",
     }[program?.key] ?? "connect a pi, claude code or codex adapter.";
-    return root.p(16).gap(20).text_size(12).overflow_y_scrollbar()
+    return root.p(16).gap(16).text_size(12).overflow_y_scrollbar()
       .child(v_flex().gap(7)
         .child(h_flex().gap(12).items_center()
           .child(div().flex_1().min_w(0).truncate().text_size(13).font_normal().text_color(t.foreground)
@@ -80,8 +81,9 @@ export default class SessionDetails extends View {
             .tooltip(`branch: ${pane.branch}`).accessibility_label(`branch: ${pane.branch}`)
             .child(svg("mods/workspace-chrome/branch.svg").size(12).flex_none())
             .child(div().min_w(0).truncate().child(pane.branch.toLowerCase()))))))
-      .child(h_flex().gap(24)
+      .child(h_flex().gap(12)
         .child(this.metric("context used", status?.contextPercent, t.muted))
+        .when(supported.session, el => el.child(this.metric("5h remaining", quota?.sessionLeft, t.muted, [sessionReset, reported].filter(Boolean).join(". "))))
         .when(supported.weekly, el => el.child(this.metric("weekly remaining", quota?.weeklyLeft, t.muted, [weeklyReset, reported].filter(Boolean).join(". ")))))
       .when(supported.resetCredits, el => el.child(h_flex().gap(8).items_center().text_size(11.5).text_color(t.muted)
         .tooltip([resets.detail, reported].filter(Boolean).join(". ")).accessibility_label(`${resets.label}. ${resets.detail}`)

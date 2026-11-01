@@ -25,7 +25,7 @@ export default function (pi: ExtensionAPI) {
     const provider = subscriptionProvider(ctx);
     const snapshot = {
       version: 2, client: "pi", pid: process.pid, cwd: ctx.cwd,
-      capabilities: { weekly: provider !== null, resetCredits: provider === "openai-codex" },
+      capabilities: { session: provider !== null, weekly: provider !== null, resetCredits: provider === "openai-codex" },
       model: model ? { id: model.id, name: model.name, provider: model.provider } : null,
       effort: pi.getThinkingLevel(), contextPercent: ctx.getContextUsage()?.percent ?? null,
       quota: quotaModel === modelKey() ? quota : null,
@@ -51,7 +51,7 @@ export default function (pi: ExtensionAPI) {
       let next: Quota | null;
       try { next = await loadQuota(ctx, controller.signal); }
       catch {
-        next = { weeklyLeft: null, weeklyResetAt: null, resetCount: null,
+        next = { sessionLeft: null, sessionResetAt: null, weeklyLeft: null, weeklyResetAt: null, resetCount: null,
           firstResetExpiresAt: null, fetchedAt: Date.now(), error: "Usage unavailable" };
       }
       if (!active || modelKey() !== key) return;

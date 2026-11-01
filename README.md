@@ -23,9 +23,9 @@ The installer backs up changed files and preserves Claude's existing status line
 
 | Client | What it reports |
 | --- | --- |
-| **Pi** | Model, effort and context for any provider. Weekly usage for Codex and Anthropic OAuth subscriptions. |
-| **Claude Code** | Model, effort, context and weekly usage supplied by its status line. |
-| **Codex CLI** | Session-hook metadata, plus ChatGPT subscription usage with file-backed OAuth credentials. |
+| **Pi** | Model, effort and context for any provider. 5h and weekly usage for Codex and Anthropic OAuth subscriptions. |
+| **Claude Code** | Model, effort, context, 5h and weekly usage supplied by its status line. |
+| **Codex CLI** | Session-hook metadata and 5h/weekly limits, plus ChatGPT usage with file-backed OAuth credentials. |
 
 Reset credits are Codex-only. Unsupported limits stay hidden; unavailable values show `—`, not zero.
 

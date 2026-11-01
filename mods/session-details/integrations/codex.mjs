@@ -25,8 +25,14 @@ export function applyRecord(state, record) {
       state.contextPercent = Math.max(0, Math.min(100, total / size * 100));
     }
     if (data.rate_limits) {
-      const weekly = [data.rate_limits.primary, data.rate_limits.secondary].find(window => window?.window_minutes === 10080);
-      state.quota = weekly ? { ...emptyQuota(timestamp(record.timestamp) ?? 0), weeklyLeft: remaining(weekly.used_percent), weeklyResetAt: timestamp(weekly.resets_at) } : null;
+      const windows = [data.rate_limits.primary, data.rate_limits.secondary];
+      const session = windows.find(window => window?.window_minutes === 300);
+      const weekly = windows.find(window => window?.window_minutes === 10080);
+      state.capabilities = { session: session != null, weekly: weekly != null, resetCredits: false };
+      state.quota = session || weekly ? {
+        ...emptyQuota(timestamp(record.timestamp) ?? 0), sessionLeft: remaining(session?.used_percent), sessionResetAt: timestamp(session?.resets_at),
+        weeklyLeft: remaining(weekly?.used_percent), weeklyResetAt: timestamp(weekly?.resets_at),
+      } : null;
     }
   }
 }
@@ -56,7 +62,7 @@ export async function codexSnapshot(data, previous, options = {}) {
     model: model ? { id: model, name: model, provider: state?.provider ?? null } : null,
     effort: state?.model === model ? state.effort : null,
     contextPercent: state?.model === model ? state.contextPercent : null,
-    capabilities: { weekly: Boolean(state?.quota), resetCredits: false }, quota: state?.quota ?? null,
+    capabilities: state?.capabilities ?? { session: false, weekly: false, resetCredits: false }, quota: state?.quota ?? null,
   };
   // Never attach a ChatGPT allowance to an API-key or local-model session.
   if (state?.provider !== "openai") return snapshot;
@@ -64,7 +70,7 @@ export async function codexSnapshot(data, previous, options = {}) {
   const auth = await readFile(authPath, "utf8").then(JSON.parse).catch(() => null);
   const token = auth?.tokens?.access_token;
   if (!token || (auth.auth_mode && auth.auth_mode !== "chatgpt")) return snapshot;
-  snapshot.capabilities = { weekly: true, resetCredits: true };
+  snapshot.capabilities = { session: true, weekly: true, resetCredits: true };
   if (previous?.sessionId === data.session_id && previous.model?.provider === "openai"
     && previous.capabilities?.resetCredits && Date.now() - previous.quota?.fetchedAt < 60000) {
     snapshot.quota = previous.quota;

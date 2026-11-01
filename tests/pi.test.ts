@@ -4,11 +4,14 @@ import extension from "../mods/session-details/integrations/pi/index.ts";
 import { codexQuota, loadQuota } from "../mods/session-details/integrations/pi/usage.ts";
 
 const now = Date.parse("2026-10-31T12:00:00Z");
+const session = { used_percent: 20, limit_window_seconds: 18000, reset_at: now / 1000 + 600 };
 const week = { used_percent: 69, limit_window_seconds: 604800, reset_at: now / 1000 + 86400 };
 
-test("weekly quota follows window duration, not primary/secondary position", () => {
-  for (const slot of ["primary_window", "secondary_window"]) {
-    const result = codexQuota({ rate_limit: { [slot]: week } }, { credits: [] }, now);
+test("5h and weekly quotas follow window duration, not primary/secondary position", () => {
+  for (const [first, second] of [[session, week], [week, session]]) {
+    const result = codexQuota({ rate_limit: { primary_window: first, secondary_window: second } }, { credits: [] }, now);
+    assert.equal(result.sessionLeft, 80);
+    assert.equal(result.sessionResetAt, now + 600000);
     assert.equal(result.weeklyLeft, 31);
     assert.equal(result.weeklyResetAt, now + 86400000);
     assert.equal(result.resetCount, 0);
@@ -32,6 +35,9 @@ test("only available, unexpired resets count; first expiry is sorted, not array 
 test("unknown quota and unavailable reset endpoint never become zero or 100%", () => {
   const result = codexQuota({ rate_limit: { primary_window: { ...week, used_percent: "69" } } }, null, now);
   assert.equal(result.weeklyLeft, null);
+  assert.equal(result.sessionLeft, null);
+  assert.equal(result.sessionResetAt, null);
+  assert.equal(codexQuota({ rate_limit: { primary_window: { ...session, used_percent: "20" } } }, null, now).sessionLeft, null);
   assert.equal(result.resetCount, null);
   assert.ok(result.error);
   assert.equal(codexQuota({}, { credits: [] }, now).firstResetExpiresAt, null);
@@ -45,7 +51,7 @@ test("quota adapter performs read-only GETs and tolerates reset-only failure", a
     assert.equal(options.body, undefined);
     requests.push(url);
     return url.endsWith("/usage")
-      ? new Response(JSON.stringify({ rate_limit: { primary_window: week } }))
+      ? new Response(JSON.stringify({ rate_limit: { primary_window: session, secondary_window: week } }))
       : new Response("", { status: 503 });
   });
   const ctx: any = { model: { provider: "openai-codex" }, modelRegistry: {
@@ -53,6 +59,8 @@ test("quota adapter performs read-only GETs and tolerates reset-only failure", a
   } };
   const result = await loadQuota(ctx, new AbortController().signal);
   assert.equal(result?.weeklyLeft, 31);
+  assert.equal(result?.sessionLeft, 80);
+  assert.equal(result?.sessionResetAt, now + 600000);
   assert.equal(result?.resetCount, null);
   assert.deepEqual(requests, ["https://chatgpt.com/backend-api/wham/usage", "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits"]);
   assert.equal(await loadQuota({ ...ctx, model: { provider: "openai" } }, new AbortController().signal), null);
@@ -76,7 +84,7 @@ test("bridge publishes session facts, handles model change and clears on shutdow
     assert.equal(first.effort, "xhigh");
     assert.equal(first.model.name, "Model A");
     assert.equal(first.pid, process.pid);
-    assert.deepEqual(first.capabilities, { weekly: false, resetCredits: false });
+    assert.deepEqual(first.capabilities, { session: false, weekly: false, resetCredits: false });
     assert.deepEqual(Object.keys(first).sort(), ["capabilities", "client", "contextPercent", "cwd", "effort", "model", "pid", "quota", "updatedAt", "version"]);
     for (const provider of ["anthropic", "google", "openrouter", "ollama"]) {
       ctx.model = { ...ctx.model, provider, id: "model-b", name: "Model B" };
@@ -85,7 +93,7 @@ test("bridge publishes session facts, handles model change and clears on shutdow
       const next = JSON.parse(writes.at(-1)![2].slice("herdr.session-details=".length));
       assert.equal(next.model.provider, provider);
       assert.equal(next.model.name, "Model B");
-      assert.deepEqual(next.capabilities, { weekly: false, resetCredits: false });
+      assert.deepEqual(next.capabilities, { session: false, weekly: false, resetCredits: false });
     }
     await handlers.get("session_shutdown")!({});
     assert.deepEqual(writes.at(-1), ["label", "test-terminal", "herdr.session-details="]);
@@ -96,17 +104,20 @@ test("bridge publishes session facts, handles model change and clears on shutdow
   }
 });
 
-test("Anthropic OAuth reads weekly utilization without Codex reset credits", async t => {
+test("Anthropic OAuth reads 5h and weekly utilization without Codex reset credits", async t => {
   const requests: string[] = [];
   t.mock.method(globalThis, "fetch", async (url: string, options: RequestInit) => {
     requests.push(url);
     assert.equal(options.method ?? "GET", "GET");
-    return new Response(JSON.stringify({ seven_day: { utilization: 58, resets_at: "2026-11-07T00:00:00Z" } }));
+    return new Response(JSON.stringify({ five_hour: { utilization: 95, resets_at: "2026-10-31T13:00:00Z" },
+      seven_day: { utilization: 58, resets_at: "2026-11-07T00:00:00Z" } }));
   });
   const result = await loadQuota({ model: { provider: "anthropic" }, modelRegistry: {
     isUsingOAuth: () => true, getApiKeyForProvider: async () => Buffer.from("test-fixture").toString("base64"),
   } } as any, new AbortController().signal);
   assert.deepEqual(requests, ["https://api.anthropic.com/api/oauth/usage"]);
+  assert.equal(result?.sessionLeft, 5);
+  assert.equal(result?.sessionResetAt, now + 3600000);
   assert.equal(result?.weeklyLeft, 42);
   assert.equal(result?.weeklyResetAt, Date.parse("2026-11-07T00:00:00Z"));
   assert.equal(result?.resetCount, null);
